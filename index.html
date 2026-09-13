@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>PulseOne Hospital Management</title>
+    <script>
+      // Paints the saved theme before first render; without it the app flashes
+      // white on every reload for dark-mode users. Key and shape must stay in
+      // step with src/stores/themeStore.ts (zustand persist).
+      (function () {
+        try {
+          var raw = localStorage.getItem('pulseone-theme');
+          var theme = raw ? JSON.parse(raw).state.theme : 'system';
+          var dark =
+            theme === 'dark' ||
+            (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.add(dark ? 'dark' : 'light');
+        } catch (error) {
+          document.documentElement.classList.add('light');
+        }
+
+        // Same idea for language: the Myanmar font stack and the loosened
+        // line-height key off <html lang>, so painting it before first render
+        // avoids a frame of Burmese text set in the Latin metrics. Key must
+        // stay in step with src/i18n/config.ts.
+        try {
+          var language = localStorage.getItem('pulseone-language');
+          document.documentElement.lang = language === 'my' ? 'my' : 'en';
+        } catch (error) {
+          document.documentElement.lang = 'en';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

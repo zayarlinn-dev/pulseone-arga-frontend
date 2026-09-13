@@ -1,0 +1,622 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/*
+ * `dark:` utilities follow the .dark class rather than the OS query, because
+ * the theme store always resolves the user's choice (including "system") to an
+ * explicit class on <html>. Keeping variables and variants on the same signal
+ * stops the two from disagreeing.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Clinical palette: a calm teal — the colour hospital software has long used
+ * for scrubs and signage — on cool neutral greys, with semantic colours kept
+ * legible against both surfaces for triage-style status badges.
+ */
+@theme {
+  /*
+   * Latin first, then the Burmese faces in the order they are actually
+   * available: Pyidaungsu is the de-facto standard on Myanmar desktops, Myanmar
+   * Text ships with Windows, and Noto/Padauk cover macOS, Android and Linux.
+   * Keeping them in one stack means a mixed line — a Burmese label beside a
+   * Latin drug name or an invoice number — renders in one pass instead of the
+   * shaping engine dropping to a default serif mid-line.
+   */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'Pyidaungsu', 'Myanmar Text', 'Noto Sans Myanmar', 'Padauk', sans-serif;
+  --color-background: oklch(0.98 0.006 210);
+  --color-foreground: oklch(0.21 0.02 240);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.21 0.02 240);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.21 0.02 240);
+  --color-primary: oklch(0.56 0.11 199);
+  --color-primary-foreground: oklch(0.99 0.005 200);
+  --color-secondary: oklch(0.96 0.01 200);
+  --color-secondary-foreground: oklch(0.3 0.02 235);
+  --color-muted: oklch(0.96 0.008 210);
+  --color-muted-foreground: oklch(0.52 0.02 230);
+  --color-accent: oklch(0.94 0.02 195);
+  --color-accent-foreground: oklch(0.28 0.03 210);
+  --color-destructive: oklch(0.58 0.19 27);
+  --color-destructive-foreground: oklch(0.99 0 0);
+  --color-success: oklch(0.6 0.13 155);
+  --color-success-foreground: oklch(0.99 0 0);
+  /* Kept darker than a poster-yellow so warning text clears 4.5:1 on its own
+     tinted badge in light mode. */
+  --color-warning: oklch(0.6 0.13 62);
+  --color-warning-foreground: oklch(0.99 0 0);
+  --color-info: oklch(0.6 0.12 245);
+  --color-info-foreground: oklch(0.99 0 0);
+  --color-border: oklch(0.91 0.008 215);
+  --color-input: oklch(0.91 0.008 215);
+  --color-ring: oklch(0.56 0.11 199);
+
+  /*
+   * Chart series colours, kept apart from the UI palette on purpose.
+   *
+   * The interface teal is a brand colour chosen to look calm; series colours
+   * have to be *told apart*, including by a colourblind reader, which is a
+   * different problem. These two are a validated categorical pair: against
+   * both card surfaces they clear the lightness band, the chroma floor, 3:1
+   * contrast, and a colour-vision-deficiency separation of ΔE 24.7 (light) /
+   * 26.8 (dark) — well past the ΔE 8 target. Do not substitute a "nicer"
+   * colour here without re-validating the pair.
+   *
+   * Slots are assigned in fixed order and never recycled: series 1 is always
+   * invoiced revenue, series 2 always pharmacy, series 3 always what something
+   * cost, series 4 always what was left — whatever else is on screen.
+   *
+   * 3 and 4 were added for the profitability screen and validated the same way.
+   * Against white, cost↔revenue separates by ΔE 13.9 under protanopia (target
+   * 8) and 26.2 with normal vision; on the dark card the same pair is 12.1 and
+   * 25.5. Profit only ever draws alone, so it is checked for chroma and
+   * contrast rather than separation.
+   */
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #c2318b;
+  --color-series-4: #12855a;
+
+  /*
+   * Ordinal ramp, for bands that have an order — shelf life, age, tiers.
+   *
+   * One hue stepped light to dark, which is what says "these are a sequence"
+   * rather than "these are different things". Categorical slots must never be
+   * used for a scale like this, and this ramp must never be used for
+   * categories: the whole meaning of a ramp is that step 4 is more than step 2.
+   *
+   * Validated as an ordinal scale: lightness is monotone, every adjacent gap
+   * clears ΔL 0.06, and the light end holds 2.15:1 against white (2.50:1 for
+   * the dark end against the dark card). Restepped for dark rather than
+   * inverted, same as every other colour here.
+   */
+  --color-scale-1: #83b5ea;
+  --color-scale-2: #5596e0;
+  --color-scale-3: #2a78d6;
+  --color-scale-4: #175aa6;
+  --color-scale-5: #0d3f7d;
+  /* Recessive: the grid should be readable, not competing with the data. */
+  --color-chart-grid: oklch(0.91 0.008 215);
+}
+
+@layer base {
+  :root,
+  .light {
+    color-scheme: light;
+  }
+
+  /* Lifted, not just inverted: surfaces stay slightly blue so long shifts on a
+     bright ward screen do not read as pure black. */
+  .dark {
+    color-scheme: dark;
+    /* Series colours are re-stepped for the dark surface and validated
+       against it separately — never an automatic inversion. */
+    --color-series-1: #3987e5;
+    --color-series-2: #d95926;
+    --color-series-3: #d64d9e;
+    --color-series-4: #2aa877;
+    --color-scale-1: #9cc4f4;
+    --color-scale-2: #6ba6ec;
+    --color-scale-3: #3987e5;
+    --color-scale-4: #3576bd;
+    --color-scale-5: #2c5d94;
+    --color-chart-grid: oklch(0.32 0.02 240);
+    --color-background: oklch(0.19 0.02 240);
+    --color-foreground: oklch(0.96 0.006 220);
+    --color-card: oklch(0.23 0.02 240);
+    --color-card-foreground: oklch(0.96 0.006 220);
+    --color-popover: oklch(0.23 0.02 240);
+    --color-popover-foreground: oklch(0.96 0.006 220);
+    --color-primary: oklch(0.72 0.11 195);
+    --color-primary-foreground: oklch(0.18 0.03 220);
+    --color-secondary: oklch(0.28 0.02 240);
+    --color-secondary-foreground: oklch(0.96 0.006 220);
+    --color-muted: oklch(0.27 0.02 240);
+    --color-muted-foreground: oklch(0.7 0.02 230);
+    --color-accent: oklch(0.31 0.03 230);
+    --color-accent-foreground: oklch(0.96 0.006 220);
+    --color-destructive: oklch(0.65 0.18 25);
+    --color-destructive-foreground: oklch(0.99 0 0);
+    --color-success: oklch(0.7 0.13 158);
+    --color-success-foreground: oklch(0.18 0.03 220);
+    --color-warning: oklch(0.8 0.14 75);
+    --color-warning-foreground: oklch(0.18 0.03 220);
+    --color-info: oklch(0.68 0.11 245);
+    --color-info-foreground: oklch(0.18 0.03 220);
+    --color-border: oklch(0.31 0.02 240);
+    --color-input: oklch(0.31 0.02 240);
+    --color-ring: oklch(0.72 0.11 195);
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    /* Softens the flip between themes without animating layout. */
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  /* Thin, token-coloured scrollbars so the sidebar and tables do not punch a
+     bright strip through a dark screen. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/*
+ * The collapsed sidebar rail, which scrolls but must not show a scrollbar.
+ *
+ * A scrollbar takes its width out of the content box of the element it is on
+ * and nothing else, so the rail's icon column would sit half a scrollbar off
+ * the axis that the brand mark, the search button and the account avatar all
+ * share — visibly misaligned in a 64px column.
+ *
+ * Outside `@layer base` and keyed to an attribute so it wins over the global
+ * `*::-webkit-scrollbar` rule above on both layer order and specificity.
+ */
+[data-rail-scroll] {
+  scrollbar-width: none;
+}
+
+[data-rail-scroll]::-webkit-scrollbar {
+  display: none;
+}
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * Burmese typography
+ * ---------------------------------------------------------------------------
+ * Burmese builds a syllable vertically: a vowel sign can sit above the
+ * consonant and a mark below it, so one line of text carries far more ink than
+ * the Latin line box this layout was measured for. Anything that clips to that
+ * box — `truncate`, `line-clamp-*`, a tight `leading-*` — shears the top or
+ * the bottom off the syllable, which is why the Burmese reads as broken on a
+ * screen that is fine in English.
+ *
+ * These rules sit OUTSIDE @layer base deliberately. Tailwind's font-size
+ * utilities carry their own line-height and live in @layer utilities, which
+ * beats `base` however specific the base selector is; an unlayered rule beats
+ * every layer. (The print block below relies on the same ordering.)
+ *
+ * Everything is scoped to lang="my" — set on <html> by the boot script and by
+ * the i18n store — so the English screens keep the metrics they were tuned to.
+ */
+html:lang(my) {
+  line-height: 1.9;
+}
+
+/* Each size utility ships a line-height chosen for Latin; these restore the
+   headroom the stacked marks need at that step. */
+html:lang(my) .text-sm,
+html:lang(my) .text-base {
+  line-height: 1.9;
+}
+
+html:lang(my) .text-lg {
+  line-height: 1.8;
+}
+
+html:lang(my) .text-xl,
+html:lang(my) .text-2xl,
+html:lang(my) .text-3xl {
+  line-height: 1.7;
+}
+
+/*
+ * The smallest steps are the worst affected: 10–11px is comfortable for Latin
+ * capitals and turns a stacked Burmese syllable into a smudge, so the floor is
+ * raised as well as the leading.
+ */
+html:lang(my) .text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.9;
+}
+
+html:lang(my) [class*='text-[10px]'],
+html:lang(my) [class*='text-[11px]'] {
+  font-size: 0.75rem;
+  line-height: 1.9;
+}
+
+/* The tight leadings the Latin layout was tuned with clip every time here. */
+html:lang(my) .leading-none,
+html:lang(my) .leading-tight,
+html:lang(my) .leading-snug {
+  line-height: 1.85;
+}
+
+/*
+ * A box that hides its overflow has to be at least as tall as the ink it
+ * holds. These two utilities are what put a name in a table cell or a tile, so
+ * they are the ones that cut the marks off mid-glyph.
+ *
+ * Leading alone is not quite enough: the clip is to the *content box*, and a
+ * tall syllable can still reach past it. The padding grows that box while the
+ * matching negative margin gives the space straight back to the layout, so the
+ * row keeps the height it had and only the clipping rectangle changes.
+ */
+html:lang(my) .truncate,
+html:lang(my) [class*='line-clamp-'] {
+  line-height: 2;
+  padding-block: 0.2em;
+  margin-block: -0.2em;
+}
+
+/* Burmese has no letter case, so `uppercase` does nothing to the glyphs — but
+   the wide tracking that ships with those labels still pulls the stacked marks
+   apart, so both are dropped rather than inherited. */
+html:lang(my) .uppercase {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ─── The 16px floor on phones ───────────────────────────────────────────────
+   iOS Safari zooms the whole page in whenever a field it is focusing has text
+   smaller than 16px, and it does not zoom back out afterwards — so one tap on a
+   filter box leaves the user scrolled sideways on a page they then have to
+   pinch their way out of.
+
+   This lives here rather than in the field components because a `sm:text-sm` in
+   one of those class strings would outlive the override it was meant to yield
+   to: tailwind-merge keys on the modifier, so a caller passing `text-xs` drops
+   the unprefixed half and keeps the prefixed one, and every compact control in
+   the app quietly grows at `sm`. A media query has no such argument with the
+   class strings — it simply raises the floor and leaves the design alone above
+   it.
+
+   `max()` rather than a flat 16px so a field that is already larger keeps its
+   size; `1em` resolves against the parent, which is the size the field would
+   have inherited. */
+@media screen and (max-width: 639px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Printing.
+   The only page that prints today is the invoice receipt, and it prints from
+   the same route it is read on. Stripping the app shell here keeps that true:
+   there is no separate print view that could drift out of step with the screen
+   one. Anything the receipt should not carry is marked [data-print-hide] —
+   the shell's own header and sidebar included, so that a semantic <header>
+   inside the document being printed is not swept up with them. */
+@media print {
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  /* The shell reserves space for the fixed sidebar; printed, there is none. */
+  [data-print-reset] {
+    padding-left: 0 !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+}
+
+/* ─── The receipt ───────────────────────────────────────────────────────────
+   Two papers, one document.
+
+   The picker writes `a4` or `thermal` onto <html>, and everything below keys
+   off that rather than off the viewport. That is deliberate: `sm:` and friends
+   measure the browser window, and the 80mm preview is a narrow box inside a
+   wide one — utilities would keep the sheet's two-column layout at 80mm and
+   the preview would be showing something the printer never produces. Driving
+   the layout from the format instead means the screen is the proof, and the
+   same rules do the job again under @media print with the ink turned black.
+
+   Everything is scoped to [data-receipt] so no other screen is caught by it. */
+
+/* Label/value rows: a term on the left, its figure hard right. The one shape
+   that reads correctly at 72mm and at 182mm, which is why the meta block and
+   the totals block are both built out of it. */
+[data-receipt] [data-receipt-meta] > div,
+[data-receipt] [data-receipt-totals] > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+[data-receipt] [data-receipt-meta] dd,
+[data-receipt] [data-receipt-totals] dd {
+  text-align: right;
+}
+
+/* ─── A4 ─────────────────────────────────────────────────────────────────── */
+
+html[data-print-format='a4'] [data-receipt] {
+  width: 210mm;
+  max-width: 100%;
+  padding: 14mm;
+}
+
+/* Letterhead left, document title right — the arrangement anyone filing the
+   sheet expects to find it in. */
+html[data-print-format='a4'] [data-receipt] [data-receipt-head] {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+html[data-print-format='a4'] [data-receipt] [data-receipt-meta] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 2.5rem;
+  row-gap: 0.125rem;
+}
+
+html[data-print-format='a4'] [data-receipt] [data-receipt-totals] {
+  max-width: 20rem;
+  margin-left: auto;
+}
+
+/* ─── 80mm roll ──────────────────────────────────────────────────────────── */
+
+html[data-print-format='thermal'] [data-receipt] {
+  width: 80mm;
+  max-width: 100%;
+  padding: 3mm;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* The size utilities are tuned for a screen; at the top of that scale the
+   clinic name wraps onto three lines in a 72mm column. */
+html[data-print-format='thermal'] [data-receipt] .text-lg {
+  font-size: 13px;
+}
+
+html[data-print-format='thermal'] [data-receipt] .text-base {
+  font-size: 12px;
+}
+
+html[data-print-format='thermal'] [data-receipt] .text-sm {
+  font-size: 11px;
+}
+
+html[data-print-format='thermal'] [data-receipt] .text-xs {
+  font-size: 10px;
+}
+
+html[data-print-format='thermal'] [data-receipt] [data-receipt-head] {
+  text-align: center;
+}
+
+html[data-print-format='thermal'] [data-receipt] [data-receipt-title] {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+/*
+ * Lines, the way a till roll writes them.
+ *
+ * Five columns do not fit across 72mm without the description shredding into
+ * one word per line, so the row is re-cut the way every receipt in every shop
+ * cuts it: the name across the full width, then the arithmetic beneath it —
+ * `2 × 1,500` on the left, the amount hard right. The table stays a table in
+ * the markup, which is what the A4 sheet and every screen reader want.
+ */
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] thead {
+  display: none;
+}
+
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items],
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] tbody {
+  display: block;
+}
+
+/* Section headings span the row rather than dropping into the first track. */
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td[data-col='group'],
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td[data-col='empty'] {
+  grid-column: 1 / -1;
+}
+
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td[data-col='empty'] {
+  text-align: center;
+}
+
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] tr {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: baseline;
+  column-gap: 0.35rem;
+  padding: 3px 0;
+}
+
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td {
+  display: block;
+  padding: 0;
+}
+
+/* The description takes the whole width above the figures. */
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td:nth-child(2) {
+  grid-column: 1 / -1;
+}
+
+/* Batch numbers are for reconciling stock against the filed sheet; the copy
+   that comes off the roll and across the counter does not carry them. */
+html[data-print-format='thermal'] [data-receipt] [data-line-batch] {
+  display: none;
+}
+
+/* Numbering is a filing convention for the sheet; the roll has no use for it. */
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td[data-col='no'] {
+  display: none;
+}
+
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td[data-col='qty'],
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td[data-col='price'] {
+  text-align: left;
+}
+
+/* The multiplication sign belongs to the receipt, not to a column, so it is
+   set here rather than carried in the markup the sheet also renders. */
+html[data-print-format='thermal'] [data-receipt] [data-receipt-items] td[data-col='qty']::after {
+  content: ' ×';
+}
+
+/* Nothing to sign on a slip handed straight across the counter. */
+html[data-print-format='thermal'] [data-receipt] [data-receipt-signatures] {
+  display: none;
+}
+
+/* ─── The A4 sheet on a phone ────────────────────────────────────────────────
+   The rules above dress the receipt as the paper it will come out on, and a
+   210mm sheet does not fit a 360px screen. `max-width: 100%` keeps it from
+   overflowing, but the sheet's furniture — a 14mm margin, a two-column meta
+   block, two 11rem signature rules side by side — was measured against 182mm
+   of usable width and has about 230px to work with here.
+
+   So this block re-cuts the A4 *preview* for a narrow screen, and only the
+   preview: it is `@media screen`, so the printed sheet is untouched, and every
+   rule is a layout concession rather than a content change. The 80mm roll
+   needs none of it — it is already narrower than the phone. */
+@media screen and (max-width: 640px) {
+  html[data-print-format='a4'] [data-receipt] {
+    /* 14mm of margin on each side eats a quarter of the screen. */
+    padding: 1rem;
+  }
+
+  /* Letterhead over title rather than beside it. */
+  html[data-print-format='a4'] [data-receipt] [data-receipt-head] {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Two label/value columns leave about 95px each, which is narrower than the
+     labels. One column per row instead. */
+  html[data-print-format='a4'] [data-receipt] [data-receipt-meta] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The totals block already sits hard right; at this width it is the page. */
+  html[data-print-format='a4'] [data-receipt] [data-receipt-totals] {
+    max-width: none;
+  }
+
+  /* Five columns across 230px give each about 46px, which a six-figure kyat
+     amount does not fit into. Dropping the line number buys the amount column
+     its width back — the roll drops it for the same reason, and it is a filing
+     convention for the paper rather than anything the reader needs. */
+  html[data-print-format='a4'] [data-receipt] [data-receipt-items] th[data-col='no'],
+  html[data-print-format='a4'] [data-receipt] [data-receipt-items] td[data-col='no'] {
+    display: none;
+  }
+
+  html[data-print-format='a4'] [data-receipt] [data-receipt-items] {
+    font-size: 0.8125rem;
+  }
+
+  /* Two 11rem rules and a 2rem gap come to 384px — wider than the screen. */
+  [data-receipt] [data-receipt-signatures] {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  [data-receipt] [data-receipt-signatures] > * {
+    width: 100%;
+  }
+}
+
+/* ─── On paper ───────────────────────────────────────────────────────────── */
+
+@media print {
+  [data-receipt] {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+  }
+
+  /* The page box supplies the margin now, so the card's own padding would only
+     narrow the column it already fits exactly. */
+  html[data-print-format='thermal'] [data-receipt] {
+    width: 100%;
+    padding: 0;
+  }
+
+  html[data-print-format='a4'] [data-receipt] {
+    width: 100%;
+    padding: 0;
+  }
+
+  /* A thermal head prints one bit per dot: the muted greys the screen leans on
+     dither into a smear, so every mark on the roll goes out black. */
+  html[data-print-format='thermal'] [data-receipt],
+  html[data-print-format='thermal'] [data-receipt] * {
+    color: #000 !important;
+  }
+
+  /* A line item, the totals and the footer are each read as one thing, so
+     none of them may be cut in half by a page break. The table header repeats
+     on the next sheet on its own — that is what thead is for. */
+  [data-receipt] [data-receipt-items] tr,
+  [data-receipt] [data-receipt-totals],
+  [data-receipt] [data-receipt-foot] {
+    break-inside: avoid;
+  }
+
+  /* A section heading left at the foot of a page is a heading for nothing. */
+  [data-receipt] [data-receipt-items] tr[data-group-head] {
+    break-after: avoid;
+  }
+
+  /* Tinted panels print as nothing at all — the void notice keeps a rule so it
+     is still unmistakably a void notice. */
+  html[data-print-format='thermal'] [data-receipt] [data-receipt-void] {
+    background: transparent;
+    border: 1px solid #000;
+  }
+}
