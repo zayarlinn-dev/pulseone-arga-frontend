@@ -22,7 +22,7 @@ import { useDropdown } from '@/hooks/api/useDropdown';
 import { useResourceList, useResourceMutations } from '@/hooks/api/useResource';
 import { doctorScheduleService } from '@/services/erpService';
 import { useAuthStore } from '@/stores/userStore';
-import { formatDate } from '@/lib/utils';
+import { formatClockTime, formatDate } from '@/lib/utils';
 import type { DoctorSchedule } from '@/types/erp';
 
 /**
@@ -86,7 +86,7 @@ export default function DoctorSchedulePage() {
       key: 'startTime',
       header: t('schedules.column.hours'),
       className: 'tabular-nums',
-      render: row => `${row.startTime} - ${row.endTime}`
+      render: row => `${formatClockTime(row.startTime)} - ${formatClockTime(row.endTime)}`
     },
     {
       hideBelow: 'lg',

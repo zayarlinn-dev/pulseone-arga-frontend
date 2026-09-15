@@ -317,6 +317,7 @@ function LedgerBody({
   const qty = (value: number) => formatQty(value, unit);
 
   const usageGroups = useMemo(() => groupUsage(report.usage), [report.usage]);
+  const movements = report.movements ?? [];
 
   const columns: Column<StockLedgerMovement>[] = [
     {
@@ -551,7 +552,7 @@ function LedgerBody({
 
       {/* The brought-forward line is what makes page two readable: without it
           the first balance on the page appears out of nowhere. */}
-      {report.balanceApplicable && report.movements.length > 0 && (
+      {report.balanceApplicable && movements.length > 0 && (
         <p className="mb-2 flex items-baseline justify-between rounded-md border border-dashed px-3 py-2 text-sm">
           <span className="text-muted-foreground">
             {page > 1
@@ -564,12 +565,12 @@ function LedgerBody({
 
       <DataTable
         columns={columns}
-        rows={report.movements}
+        rows={movements}
         rowKey={row => row.id}
         emptyMessage={t('inventory.ledger.empty')}
       />
 
-      {report.balanceApplicable && report.movements.length > 0 && (
+      {report.balanceApplicable && movements.length > 0 && (
         <p className="mt-2 flex items-baseline justify-between rounded-md border px-3 py-2 text-sm">
           <span className="text-muted-foreground">
             {page < report.totalPages
@@ -577,7 +578,7 @@ function LedgerBody({
               : t('inventory.ledger.closingBalance')}
           </span>
           <span className="font-semibold tabular-nums">
-            {qty(report.movements[report.movements.length - 1].balance)}
+            {qty(movements[movements.length - 1].balance)}
           </span>
         </p>
       )}
@@ -647,10 +648,12 @@ interface UsageGroup {
   movements: number;
 }
 
-function groupUsage(usage: StockLedgerUsage[]): UsageGroup[] {
+function groupUsage(usage: StockLedgerUsage[] | null | undefined): UsageGroup[] {
   const groups = new Map<StockReferenceType, UsageGroup>();
 
-  for (const entry of usage) {
+  // Defended rather than trusted: this is a network boundary, and a period an
+  // item did not move in is an ordinary thing to ask about.
+  for (const entry of usage ?? []) {
     const group = groups.get(entry.referenceType) ?? {
       referenceType: entry.referenceType,
       in: 0,

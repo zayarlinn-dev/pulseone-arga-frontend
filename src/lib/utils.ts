@@ -18,6 +18,18 @@ export function cn(...inputs: ClassValue[]) {
  * slips and the backend's own responses, all of which use Latin digits, so the
  * month names translate but the numerals deliberately do not.
  */
+/**
+ * The hospital's timezone, pinned rather than taken from the browser.
+ *
+ * Every timestamp the API returns is an instant in UTC, and the clinic these
+ * screens serve is in Yangon. Formatting in the viewer's own zone would make a
+ * bill raised at 7pm read as 1:30pm to anyone whose laptop is set to UTC — a
+ * support engineer, a director travelling, a machine whose clock was never set
+ * — and the two would then disagree about which day a late-evening invoice
+ * belongs to. The ward clock is the one that matters, so it is the one used.
+ */
+export const HOSPITAL_TIME_ZONE = 'Asia/Yangon';
+
 export function getIntlLocale(): string {
   return i18n.resolvedLanguage === 'my' ? 'my-u-nu-latn' : 'en-GB';
 }
@@ -94,7 +106,9 @@ export function formatDate(value: string | null | undefined): string {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleDateString(getIntlLocale(), { day: '2-digit', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString(getIntlLocale(), {
+    day: '2-digit', month: 'short', year: 'numeric', timeZone: HOSPITAL_TIME_ZONE
+  });
 }
 
 /**
@@ -154,12 +168,47 @@ export function formatRelativeTime(value: Date | string | number): string {
   return getRelativeFormatter().format(Math.round(delta), 'year');
 }
 
-/** Formats an ISO timestamp as a local date and time. */
+/**
+ * Formats an ISO timestamp as a local date and time -- "15 Sept 2026, 2:08 pm".
+ *
+ * Twelve-hour throughout, because that is how the wards and the counter say it.
+ * The hour is 'numeric' rather than '2-digit' on purpose: paired with hour12 the
+ * latter renders "02:08 pm", and a padded twelve-hour clock is not a form anyone
+ * writes. The day period follows the language -- English puts it last, Burmese
+ * first -- which is why it is left to Intl rather than appended by hand.
+ */
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
   return date.toLocaleString(getIntlLocale(), {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZone: HOSPITAL_TIME_ZONE
+  });
+}
+
+/**
+ * Formats a wire clock reading -- "15:04" or "15:04:05" -- as "3:04 pm".
+ *
+ * The API sends TimeOnly as 24-hour "HH:MM" because that is what
+ * <input type="time"> reads and writes, so the value is only turned round for
+ * display. Anything unparseable yields "-" rather than "Invalid Date".
+ *
+ * Deliberately NOT converted to HOSPITAL_TIME_ZONE. A shift starting at 08:00
+ * is a reading on the wall clock, not an instant on a timeline: it is 8am in
+ * every zone, and shifting it would turn the morning shift into the afternoon
+ * one for anyone whose machine is set elsewhere.
+ */
+export function formatClockTime(value: string | null | undefined): string {
+  if (!value) return '-';
+  const [rawHour, rawMinute] = value.split(':');
+  const hour = Number(rawHour);
+  const minute = Number(rawMinute);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return '-';
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return '-';
+  // The date is a carrier for the clock reading and never shown.
+  return new Date(2000, 0, 1, hour, minute).toLocaleTimeString(getIntlLocale(), {
+    hour: 'numeric', minute: '2-digit', hour12: true
   });
 }

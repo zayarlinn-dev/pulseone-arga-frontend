@@ -997,6 +997,7 @@ export interface ExpiringBatch {
   itemBatchId: number;
   itemStoreMapId: number;
   batchNo: string;
+  batchDate?: string | null;
   expiryDate?: string | null;
   qty: number;
   costPrice: string;

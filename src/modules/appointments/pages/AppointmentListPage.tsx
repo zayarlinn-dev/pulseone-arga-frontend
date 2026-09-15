@@ -17,7 +17,7 @@ import { useDropdown } from '@/hooks/api/useDropdown';
 import { useResourceList } from '@/hooks/api/useResource';
 import { appointmentService } from '@/services/erpService';
 import { useAuthStore } from '@/stores/userStore';
-import { formatDate } from '@/lib/utils';
+import { formatClockTime, formatDate } from '@/lib/utils';
 import type { Appointment, AppointmentStatus } from '@/types/erp';
 import { ArriveDialog } from '../components/ArriveDialog';
 import { CancelAppointmentDialog } from '../components/CancelAppointmentDialog';
@@ -78,7 +78,7 @@ export default function AppointmentListPage() {
       hideBelow: 'sm',
       header: t('appointments.column.time'),
       className: 'tabular-nums',
-      render: row => `${row.startTime} - ${row.endTime}`
+      render: row => `${formatClockTime(row.startTime)} - ${formatClockTime(row.endTime)}`
     },
     {
       header: t('appointments.column.patient'),

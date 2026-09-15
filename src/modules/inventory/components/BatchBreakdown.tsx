@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { inventoryService } from '@/services';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
 import { formatQty } from '@/lib/uom';
-import type { ExpiryStatus, StockBatch } from '@/types/models';
+import { ExpiryCell } from './ExpiryCell';
+import type { StockBatch } from '@/types/models';
 
 interface BatchBreakdownProps {
   itemStoreMapId: number;
@@ -50,7 +51,11 @@ export function BatchBreakdown({ itemStoreMapId, baseUom }: BatchBreakdownProps)
     );
   }
 
-  if (data.batches.length === 0) {
+  // Defended rather than trusted: this is a network boundary, and a stock row
+  // with nothing left on the shelf legitimately carries no batches.
+  const batches = data.batches ?? [];
+
+  if (batches.length === 0) {
     return (
       <p className="px-4 py-6 text-sm text-muted-foreground">{t('inventory.batches.empty')}</p>
     );
@@ -110,14 +115,14 @@ export function BatchBreakdown({ itemStoreMapId, baseUom }: BatchBreakdownProps)
             </tr>
           </thead>
           <tbody>
-            {data.batches.map(batch => (
+            {batches.map(batch => (
               <BatchRow key={batch.id} batch={batch} baseUom={baseUom} />
             ))}
           </tbody>
           <tfoot>
             <tr className="border-t font-medium">
               <td className="py-2" colSpan={4}>
-                {t('inventory.batches.total', { count: data.batches.length })}
+                {t('inventory.batches.total', { count: batches.length })}
               </td>
               <td className="py-2 pr-3 text-right tabular-nums">
                 {formatQty(data.batchQtySum, baseUom)}
@@ -132,18 +137,8 @@ export function BatchBreakdown({ itemStoreMapId, baseUom }: BatchBreakdownProps)
   );
 }
 
-/** Badge colour per expiry band. `ok` and `none` get no badge at all. */
-const statusVariant: Record<ExpiryStatus, 'destructive' | 'warning' | null> = {
-  expired: 'destructive',
-  critical: 'destructive',
-  warning: 'warning',
-  ok: null,
-  none: null
-};
-
 function BatchRow({ batch, baseUom }: { batch: StockBatch; baseUom?: string | null }) {
   const { t } = useTranslation();
-  const variant = statusVariant[batch.expiryStatus];
 
   return (
     <tr className={cn('border-b last:border-0', batch.expiryStatus === 'expired' && 'opacity-60')}>
@@ -176,20 +171,18 @@ function BatchRow({ batch, baseUom }: { batch: StockBatch; baseUom?: string | nu
       <td className="py-2 pr-3">{batch.batchDate ? formatDate(batch.batchDate) : '-'}</td>
 
       <td className="py-2 pr-3">
-        {batch.expiryDate ? (
-          <span className="flex items-center gap-2">
-            {formatDate(batch.expiryDate)}
-            {variant && (
-              <Badge variant={variant}>
-                {batch.expiryStatus === 'expired'
-                  ? t('inventory.batches.expired')
-                  : t('inventory.batches.inDays', { days: batch.daysToExpiry ?? 0 })}
-              </Badge>
-            )}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">{t('inventory.batches.noExpiry')}</span>
-        )}
+        {/*
+          Correctable in place. This panel is where a wrong date is usually
+          caught — the batch is named, the carton is in someone's hand — and the
+          correction carries to the same delivery in every other store.
+        */}
+        <ExpiryCell
+          itemBatchId={batch.id}
+          expiryDate={batch.expiryDate}
+          expiryStatus={batch.expiryStatus}
+          daysToExpiry={batch.daysToExpiry}
+          batchDate={batch.batchDate}
+        />
       </td>
 
       <td className="py-2 pr-3 text-right tabular-nums">{formatQty(batch.batchQty, baseUom)}</td>

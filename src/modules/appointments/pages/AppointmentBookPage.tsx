@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { PatientSearchSelect } from '@/components/shared/PatientSearchSelect';
 import { useDropdown } from '@/hooks/api/useDropdown';
 import { appointmentService } from '@/services/erpService';
-import { cn } from '@/lib/utils';
+import { cn, formatClockTime } from '@/lib/utils';
 import type { Patient } from '@/types/models';
 import type { Slot } from '@/types/erp';
 
@@ -192,7 +192,7 @@ export default function AppointmentBookPage() {
                           : 'hover:border-ring hover:bg-accent'
                       )}
                     >
-                      <div className="font-medium tabular-nums">{slot.startTime}</div>
+                      <div className="font-medium tabular-nums">{formatClockTime(slot.startTime)}</div>
                       <div className="mt-0.5">
                         {isFull ? (
                           <Badge variant="secondary" className="text-[10px]">

@@ -9,8 +9,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useResourceList } from '@/hooks/api/useResource';
 import { useDropdown } from '@/hooks/api/useDropdown';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { formatQty } from '@/lib/uom';
+import { ExpiryCell } from '../components/ExpiryCell';
 import type { ExpiringBatch, ExpiryStatus } from '@/types/models';
 
 /**
@@ -56,11 +57,19 @@ export default function ExpiryReportPage() {
     {
       header: t('inventory.expiry.column.expiry'),
       sortable: false,
+      // Correctable here, because this is the report where a wrong date
+      // announces itself: an item listed as expiring next week that the carton
+      // says is good until 2028 is on this screen and nowhere else. Fixing it
+      // takes the row off the report, which is the whole point.
       render: row => (
-        <span className="flex items-center gap-2">
-          {row.expiryDate ? formatDate(row.expiryDate) : '-'}
-          <ExpiryBadge status={row.expiryStatus} days={row.daysToExpiry} />
-        </span>
+        <ExpiryCell
+          itemBatchId={row.itemBatchId}
+          expiryDate={row.expiryDate}
+          expiryStatus={row.expiryStatus}
+          daysToExpiry={row.daysToExpiry}
+          batchDate={row.batchDate}
+          badge={<ExpiryBadge status={row.expiryStatus} days={row.daysToExpiry} />}
+        />
       )
     },
     {

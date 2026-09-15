@@ -938,6 +938,16 @@ export interface LotTrace {
   recipients: LotRecipient[];
 }
 
+/** What a corrected expiry date came to. */
+export interface LotExpiryUpdate {
+  /** Every batch of the lot, whether or not this call changed it. */
+  batchIds: number[];
+  /** The date now on file; null means the batch has no printed expiry. */
+  expiryDate: string | null;
+  /** How many rows actually moved. Zero when the date was already right. */
+  updated: number;
+}
+
 export const lotService = {
   /**
    * Traces the lot a batch belongs to: every store still holding it, and every
@@ -952,6 +962,33 @@ export const lotService = {
       return response.data.data;
     } catch (error) {
       throw toApiError(error, 'Failed to trace the lot');
+    }
+  },
+
+  /**
+   * Corrects the expiry date printed on a batch.
+   *
+   * Keyed by batch because that is what the screen has, but the server applies
+   * it to every sibling batch of the same delivery — the same carton in another
+   * store carries the same printed date. `updated` is how many rows that came
+   * to, which is worth telling the user: a correction that silently touched
+   * three stores should not look like it touched one.
+   *
+   * `null` records that the batch has no printed expiry at all, which is a
+   * different statement from leaving the field alone.
+   */
+  async updateExpiry(
+    itemBatchId: number | string,
+    expiryDate: string | null
+  ): Promise<LotExpiryUpdate> {
+    try {
+      const response = await privateApi.put<ApiResponse<LotExpiryUpdate>>(
+        `/inventories/lots/${itemBatchId}/expiry`,
+        { expiryDate }
+      );
+      return response.data.data;
+    } catch (error) {
+      throw toApiError(error, 'Failed to correct the expiry date');
     }
   }
 };

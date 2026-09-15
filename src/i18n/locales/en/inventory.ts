@@ -48,6 +48,11 @@ export const inventory = {
     drift:
       'The recorded balance is {{recorded}} but the batches add up to {{batches}}. Something wrote stock without going through the stock service — run a stock count to correct it.',
 
+    expiryEditHint: 'Click to correct the expiry date',
+    expiryEditLabel: 'Expiry date',
+    expirySaved: 'Expiry date corrected',
+    expirySavedAcrossStores: 'Expiry date corrected on {{count}} batches of this delivery',
+
     column: {
       order: '#',
       batchNo: 'Batch',

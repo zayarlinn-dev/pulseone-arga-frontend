@@ -20,7 +20,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { useResourceList, useResourceMutations } from '@/hooks/api/useResource';
 import { holidayService, leaveTypeService, shiftService } from '@/services/erpService';
 import { useAuthStore } from '@/stores/userStore';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatClockTime, formatDate } from '@/lib/utils';
 import type { Holiday, LeaveType, Shift } from '@/types/erp';
 
 type Tab = 'shifts' | 'holidays' | 'leaveTypes';
@@ -103,7 +103,7 @@ function ShiftsTab() {
       key: 'startTime',
       header: t('shifts.column.hours'),
       className: 'tabular-nums',
-      render: row => `${row.startTime} - ${row.endTime}`
+      render: row => `${formatClockTime(row.startTime)} - ${formatClockTime(row.endTime)}`
     },
     {
       hideBelow: 'md',

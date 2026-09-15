@@ -46,6 +46,11 @@ export const inventory: Translations<typeof source> = {
     drift:
       'မှတ်တမ်းအရ လက်ကျန်မှာ {{recorded}} ဖြစ်ပြီး ဘက်ခ်ျများ ပေါင်းလဒ်မှာ {{batches}} ဖြစ်နေသည်။ လက်ကျန်ကို stock service မဖြတ်ဘဲ ရေးထားခြင်း ဖြစ်သည် — ပစ္စည်းရေတွက်ပြီး ပြင်ဆင်ပါ။',
 
+    expiryEditHint: 'သက်တမ်းကုန်ရက် ပြင်ရန် နှိပ်ပါ',
+    expiryEditLabel: 'သက်တမ်းကုန်ရက်',
+    expirySaved: 'သက်တမ်းကုန်ရက် ပြင်ဆင်ပြီးပါပြီ',
+    expirySavedAcrossStores: 'ဤပို့ဆောင်မှု၏ ဘက်ခ်ျ {{count}} ခုတွင် သက်တမ်းကုန်ရက် ပြင်ဆင်ပြီးပါပြီ',
+
     column: {
       order: '#',
       batchNo: 'ဘက်ခ်ျ',

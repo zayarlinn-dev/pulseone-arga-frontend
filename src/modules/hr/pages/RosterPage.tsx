@@ -22,7 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useDropdown } from '@/hooks/api/useDropdown';
 import { rosterService } from '@/services/erpService';
 import { useAuthStore } from '@/stores/userStore';
-import { cn } from '@/lib/utils';
+import { cn, formatClockTime } from '@/lib/utils';
 import type { RosterDay } from '@/types/erp';
 
 /** The planner shows a week at a time — the unit a ward actually plans in. */
@@ -293,7 +293,7 @@ function RosterCell({
         {day.shiftCode}
       </div>
       <div className="tabular-nums text-muted-foreground">
-        {day.startTime}-{day.endTime}
+        {formatClockTime(day.startTime)}-{formatClockTime(day.endTime)}
       </div>
 
       {canManage && (
